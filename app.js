@@ -6,49 +6,62 @@ const readLine = require('readline').createInterface({
     output: process.stdout
 });
 
-readLine.question('Name: ', (name) => {
-    readLine.question('Email Address: ', (email) => {
-        if(!valid.isEmail(email)) {
-            console.log("ERROR: Invalid Format");
-        }
-        else {
-            readLine.question('Phone Number: ', (phone) => {
-                if(!valid.isMobilePhone(phone, ['id-ID'])) {
-                    console.log("ERROR: Invalid Format");
-                }
-                else {
-                    console.log(`Name: ${name}\n
-                    Email Address: ${email}\n
-                    Phone Number: ${phone}`);
+const dirPath = './data';
+if(!fs.existsSync(dirPath)){
+    fs.mkdirSync(dirPath);
+    console.log('Folder not found, new folder created.');
+};
 
-                    if(!fs.existsSync('data')){
-                        fs.mkdirSync('data');
-                        console.log('Folder not found, new folder created.');
-                    };
+const filePath = './data/contacts.json';
+if(!fs.existsSync(filePath)){
+    fs.writeFileSync(filePath, '[]', 'utf-8');
+    console.log('File not found, new file created.');
+}
 
-                    if(!fs.existsSync('data/contacts.json')){
-                        fs.writeFileSync('data/contacts.json', JSON.stringify([]));
-                        console.log('File not found, new file created.');
-                    }
-
-                    fs.readFile('data/contacts.json', 'utf8', function readFileCallback(err, data){
-                        if (err){
-                            console.log(err);
-                        } else {
-                            var obj = JSON.parse(data);
-                            obj.push({name, email, phone});
-                            fs.writeFile('data/contacts.json', JSON.stringify(obj), function callbackErr(err) {
-                                if(err){
-                                    console.log(err);
-                                };
-                            });
-                        }
-                    });
-
-                    console.log('Data saved.')
-                    readLine.close();
-                }
-            })
-        }
+function input(question) {
+    return new Promise((resolve) => {
+        readLine.question(question, (answer)=>{
+            resolve(answer);
+        })
     })
-});
+}
+
+const main = async () =>
+{
+    const name = await input('Name: ');
+    let email;
+    do {
+        email = await input('Email address: ');
+        if(!valid.isEmail(email)){
+            console.log('Invalid email format, try again');
+        }
+    } while (!valid.isEmail(email));
+    let phone;
+    do {
+        phone = await input('Phone Number: ');
+        if(!valid.isMobilePhone(phone,['id-ID'])){
+            console.log('Invalid phone number format, try again');
+        }
+    } while (!valid.isMobilePhone(phone,['id-ID']));
+
+    console.log(`Name: ${name}\nEmail Address: ${email}\nPhone Number: ${phone}`);
+
+    fs.readFile('data/contacts.json', 'utf8', function readFileCallback(err, data){
+        if (err){
+            console.log(err);
+        } else {
+            var obj = JSON.parse(data);
+            obj.push({name, email, phone});
+            fs.writeFile('data/contacts.json', JSON.stringify(obj), function callbackErr(err) {
+                if(err){
+                    console.log(err);
+                };
+            });
+        }
+    });
+
+    console.log('Data saved.');
+    process.exit(0)
+};
+
+main();
